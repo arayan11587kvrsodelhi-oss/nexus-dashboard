@@ -12,6 +12,7 @@
     "format:fix": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:browser": "node tests/run-browser-qa.mjs",
     "build": "node scripts/build-check.js"
   },
   "engines": {

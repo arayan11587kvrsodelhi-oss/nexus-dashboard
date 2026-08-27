@@ -29,6 +29,9 @@ const CACHE_KEY = "github:dashboard";
 
 const cache = new TTLCache();
 
+// In-flight promise deduplication
+let inFlightFetchPromise = null;
+
 function buildHeaders() {
   const headers = {
     "Accept": "application/vnd.github+json",
@@ -43,13 +46,14 @@ function buildHeaders() {
   return headers;
 }
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 10000;
 
 async function fetchWithDiagnostics(url) {
   let response;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const startHr = process.hrtime.bigint();
 
   try {
     response = await fetch(url, {
@@ -59,9 +63,11 @@ async function fetchWithDiagnostics(url) {
     });
   } catch (networkErr) {
     const isTimeout = networkErr?.name === "AbortError";
+    const durationMs = Number(process.hrtime.bigint() - startHr) / 1e6;
 
     logger.error("GitHub API network failure", {
       url,
+      durationMs: Math.round(durationMs),
       message: networkErr?.message,
       timedOut: isTimeout
     });
@@ -71,17 +77,28 @@ async function fetchWithDiagnostics(url) {
         ? "Timed out connecting to GitHub."
         : "Unable to connect to GitHub."
     );
+    err.status = isTimeout ? 504 : 502;
+    err.code = isTimeout ? "GITHUB_TIMEOUT" : "GITHUB_NETWORK_ERROR";
     err.isNetworkError = true;
     throw err;
   } finally {
     clearTimeout(timeout);
   }
 
+  const durationMs = Number(process.hrtime.bigint() - startHr) / 1e6;
   const rateLimit = {
     limit: response.headers.get("x-ratelimit-limit"),
     remaining: response.headers.get("x-ratelimit-remaining"),
-    reset: response.headers.get("x-ratelimit-reset")
+    reset: response.headers.get("x-ratelimit-reset"),
+    resource: response.headers.get("x-ratelimit-resource")
   };
+
+  logger.debug("GitHub API upstream call completed", {
+    url,
+    status: response.status,
+    durationMs: Math.round(durationMs),
+    rateLimitRemaining: rateLimit.remaining
+  });
 
   if (!response.ok) {
     let bodyText = "";
@@ -100,21 +117,36 @@ async function fetchWithDiagnostics(url) {
     });
 
     let message = `Unable to fetch GitHub data (HTTP ${response.status}).`;
+    let code = "GITHUB_API_ERROR";
+    let retryAfter = null;
 
-    if (
+    if (rateLimit.reset) {
+      const resetTime = Number(rateLimit.reset) * 1000;
+      retryAfter = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000));
+    }
+
+    if (response.status === 401) {
+      code = "GITHUB_UNAUTHORIZED";
+      message = "GitHub authentication failed. Check your server GITHUB_TOKEN.";
+    } else if (
       response.status === 403 ||
       response.status === 429 ||
       (rateLimit.remaining !== null && Number(rateLimit.remaining) === 0)
     ) {
+      code = "GITHUB_RATE_LIMIT";
       message = "GitHub API rate limit reached. Please try again later.";
     } else if (response.status === 404) {
-      message = "GitHub profile could not be found.";
+      code = "GITHUB_NOT_FOUND";
+      message = `GitHub profile '${env.GITHUB_USERNAME}' could not be found.`;
     } else if (response.status >= 500) {
+      code = "GITHUB_UPSTREAM_ERROR";
       message = "GitHub is temporarily unavailable.";
     }
 
     const err = new Error(message);
     err.status = response.status;
+    err.code = code;
+    err.retryAfter = retryAfter;
     err.body = bodyText;
     err.rateLimit = rateLimit;
     throw err;
@@ -147,22 +179,36 @@ function getEvents() {
 
 /**
  * Fetch a live, fully processed dashboard payload from GitHub
- * (no cache read/write - used internally by getDashboard).
+ * with in-flight deduplication.
  */
 async function fetchLiveDashboard() {
-  const [profile, repos, events] = await Promise.all([
-    getProfile(),
-    getRepositories(),
-    getEvents()
-  ]);
+  if (inFlightFetchPromise) {
+    return inFlightFetchPromise;
+  }
 
-  const processed = processGitHubData(env.GITHUB_USERNAME, profile, repos, events);
+  inFlightFetchPromise = (async () => {
+    try {
+      const [profile, repos, events] = await Promise.all([
+        getProfile(),
+        getRepositories(),
+        getEvents()
+      ]);
 
-  processed.fetchedAt = Date.now();
-  processed.isCached = false;
-  processed.fetchError = null;
+      const processed = processGitHubData(env.GITHUB_USERNAME, profile, repos, events);
+      const now = Date.now();
 
-  return processed;
+      processed.fetchedAt = now;
+      processed.expiresAt = now + env.GITHUB_CACHE_TTL_MS;
+      processed.isCached = false;
+      processed.fetchError = null;
+
+      return processed;
+    } finally {
+      inFlightFetchPromise = null;
+    }
+  })();
+
+  return inFlightFetchPromise;
 }
 
 /**
@@ -201,7 +247,11 @@ async function getDashboard(forceRefresh = false) {
       dataSource: "github"
     };
   } catch (error) {
-    logger.error("GitHub data synchronization failed", { message: error?.message });
+    logger.error("GitHub data synchronization failed", {
+      code: error?.code,
+      status: error?.status,
+      message: error?.message
+    });
 
     const stale = cache.getStale(CACHE_KEY);
 
@@ -213,13 +263,54 @@ async function getDashboard(forceRefresh = false) {
         cacheAgeMs: stale.ageMs,
         cacheState: "stale-cache",
         dataSource: "github-cache",
-        fetchError: error?.message || "Unable to synchronize GitHub data."
+        fetchError: error?.message || "Unable to synchronize GitHub data.",
+        errorCode: error?.code || "GITHUB_SYNC_ERROR"
       };
     }
 
     // No cache at all (e.g. first request ever, GitHub down) - surface the error.
     throw error;
   }
+}
+
+/**
+ * Health check helper measuring upstream GitHub latency without full load.
+ */
+async function checkGitHubHealth() {
+  const start = Date.now();
+  let latencyMs = null;
+  let status = "healthy";
+
+  if (!env.GITHUB_USERNAME) {
+    return {
+      status: "unconfigured",
+      latencyMs: null
+    };
+  }
+
+  try {
+    const res = await fetch(`${env.GITHUB_API_BASE_URL}/users/${encodeURIComponent(env.GITHUB_USERNAME)}`, {
+      method: "GET",
+      headers: buildHeaders(),
+      signal: AbortSignal.timeout(4000)
+    });
+
+    latencyMs = Date.now() - start;
+
+    if (!res.ok) {
+      status = res.status === 403 || res.status === 429 ? "rate_limited" : "degraded";
+    }
+  } catch {
+    latencyMs = Date.now() - start;
+    status = "unreachable";
+  }
+
+  return {
+    status,
+    latencyMs,
+    username: env.GITHUB_USERNAME,
+    tokenConfigured: Boolean(env.GITHUB_TOKEN)
+  };
 }
 
 /**
@@ -236,4 +327,4 @@ function getStatus() {
   };
 }
 
-module.exports = { getDashboard, getStatus };
+module.exports = { getDashboard, getStatus, checkGitHubHealth, cache };

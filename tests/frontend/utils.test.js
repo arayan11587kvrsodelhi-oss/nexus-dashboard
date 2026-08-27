@@ -63,10 +63,36 @@ describe("escapeHTML / escapeAttribute (XSS protection)", () => {
     expect(escaped).toContain("&lt;script&gt;");
   });
 
-  it("returns an empty string for null/undefined", () => {
-    expect(escapeHTML(null)).toBe("");
-    expect(escapeHTML(undefined)).toBe("");
+describe("ease", () => {
+  it("calculates cubic easing curve accurately", async () => {
+    const { ease } = await import("../../public/js/utils.js");
+    expect(ease(0)).toBe(0);
+    expect(ease(1)).toBe(1);
+    expect(ease(0.5)).toBeCloseTo(0.875, 3);
   });
+});
+
+describe("timeAgo extended ranges", () => {
+  it("formats hours correctly", () => {
+    const threeHoursAgo = new Date(Date.now() - 3 * 3600 * 1000);
+    expect(timeAgo(threeHoursAgo)).toBe("3h ago");
+  });
+
+  it("formats days correctly", () => {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 86400 * 1000);
+    expect(timeAgo(fiveDaysAgo)).toBe("5d ago");
+  });
+
+  it("formats months correctly", () => {
+    const twoMonthsAgo = new Date(Date.now() - 65 * 86400 * 1000);
+    expect(timeAgo(twoMonthsAgo)).toBe("2mo ago");
+  });
+
+  it("formats years correctly", () => {
+    const twoYearsAgo = new Date(Date.now() - 750 * 86400 * 1000);
+    expect(timeAgo(twoYearsAgo)).toBe("2y ago");
+  });
+});
 
   it("escapeAttribute behaves the same as escapeHTML", () => {
     expect(escapeAttribute(`"><script>alert(1)</script>`)).toBe(

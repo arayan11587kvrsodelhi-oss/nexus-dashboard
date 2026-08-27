@@ -23,7 +23,11 @@ const PUBLIC_DIR = path.join(__dirname, "..", "public");
 function createApp() {
   const app = express();
 
-  // Security headers (CSP, X-Content-Type-Options, etc.) - see audit P1.
+  // Render runs behind a reverse proxy (X-Forwarded-For).
+  // Express must trust the 1st hop proxy so express-rate-limit and req.ip work accurately.
+  app.set("trust proxy", 1);
+
+  // Security headers (CSP, X-Content-Type-Options, etc.)
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -31,7 +35,8 @@ function createApp() {
           defaultSrc: ["'self'"],
           imgSrc: ["'self'", "data:", "https://avatars.githubusercontent.com"],
           scriptSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
           connectSrc: ["'self'"]
         }
       }
@@ -56,6 +61,7 @@ function createApp() {
   app.use(express.json());
 
   // ----- API routes -----
+  app.use("/api", healthRoutes);
   app.use("/api/v1", healthRoutes);
   app.use("/api/v1", githubRoutes);
 

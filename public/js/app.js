@@ -85,34 +85,26 @@ const NOTIFICATIONS = [
 ========================================================= */
 
 let liveData = null;
-
 let timelineVisible = 5;
-
 let activeFilter = "all";
-
 let activeQuery = "";
-
+let activeSort = "updated";
 let chartMetric = "commits";
-
 let chartPoints = [];
-
 let chartCtx = null;
-
 let chartW = 0;
-
 let chartLineColor = "";
-
 let lastRefreshTime = Date.now();
-
 let tickerInterval = null;
-
 let autoRefreshInterval = null;
 
-/*
-  GitHub API data is public and cached by github-api.js.
-  We refresh every 5 minutes.
-*/
-const AUTO_REFRESH_MS = 5 * 60 * 1000;
+let autoRefreshMs = (() => {
+  const saved = localStorage.getItem("nexus-refresh-ms");
+  if (saved !== null && !isNaN(Number(saved))) {
+    return Number(saved);
+  }
+  return 5 * 60 * 1000;
+})();
 
 /* =========================================================
    SKELETONS
@@ -166,23 +158,30 @@ function updateLiveStatus(data) {
 
   if (!pill || !label || !dot) return;
 
-  const state = data?.cacheState || (data?.isStale ? "stale-cache" : "live");
+  if (data?.fetchError && !data?.isCached) {
+    pill.dataset.state = "error";
+    label.textContent = "OFFLINE";
+    pill.title = "Unable to connect to GitHub API.";
+    return;
+  }
+
+  const state = data?.cacheState || (data?.isStale ? "stale-cache" : data?.isCached ? "fresh-cache" : "live");
   pill.dataset.state = state;
 
   if (state === "stale-cache") {
     label.textContent = "STALE";
-    pill.title = "Showing the last known-good GitHub snapshot because the latest sync failed.";
+    pill.title = "Showing cached snapshot because latest live sync failed.";
     return;
   }
 
   if (state === "fresh-cache") {
     label.textContent = "SYNCED";
-    pill.title = "Showing a fresh server-cached GitHub snapshot.";
+    pill.title = "Showing fresh server-cached GitHub snapshot.";
     return;
   }
 
   label.textContent = "LIVE";
-  pill.title = "Showing data from the latest GitHub synchronization.";
+  pill.title = "Showing data from live GitHub synchronization.";
 }
 
 function startLiveTicker(fetchedAt) {
@@ -344,21 +343,59 @@ function updateDashboard(data) {
   const followersCount = $("#followersCount");
   const starsCount = $("#starsCount");
   const forksCount = $("#forksCount");
+  const statRepos = $("#statRepos");
+  const statStars = $("#statStars");
+  const statForks = $("#statForks");
+  const statFollowers = $("#statFollowers");
 
-  if (repoCount) {
-    repoCount.textContent = fmt(data.stats.publicRepos);
+  if (repoCount) repoCount.textContent = fmt(data.stats.publicRepos);
+  if (followersCount) followersCount.textContent = fmt(data.stats.followers);
+  if (starsCount) starsCount.textContent = fmt(data.stats.totalStars);
+  if (forksCount) forksCount.textContent = fmt(data.stats.totalForks);
+
+  if (statRepos) {
+    statRepos.dataset.target = data.stats.publicRepos;
+    animateCounter(statRepos, data.stats.publicRepos);
+  }
+  if (statStars) {
+    statStars.dataset.target = data.stats.totalStars;
+    animateCounter(statStars, data.stats.totalStars);
+  }
+  if (statForks) {
+    statForks.dataset.target = data.stats.totalForks;
+    animateCounter(statForks, data.stats.totalForks);
+  }
+  if (statFollowers) {
+    statFollowers.dataset.target = data.stats.followers;
+    animateCounter(statFollowers, data.stats.followers);
   }
 
-  if (followersCount) {
-    followersCount.textContent = fmt(data.stats.followers);
-  }
+  const profileProjects = $("#profileProjects");
+  const profileContributions = $("#profileContributions");
+  const profileFollowers = $("#profileFollowers");
+  const profileCommits = $("#profileCommits");
 
-  if (starsCount) {
-    starsCount.textContent = fmt(data.stats.totalStars);
-  }
+  if (profileProjects) profileProjects.textContent = fmt(data.stats.publicRepos);
+  if (profileContributions) profileContributions.textContent = fmt(data.stats.recentContributionTotal);
+  if (profileFollowers) profileFollowers.textContent = fmt(data.stats.followers);
+  if (profileCommits) profileCommits.textContent = fmt(data.stats.pushEvents);
 
-  if (forksCount) {
-    forksCount.textContent = fmt(data.stats.totalForks);
+  const welcomeUsername = $("#welcomeUsername");
+  const welcomeLocation = $("#welcomeLocation");
+  const welcomePublicRepos = $("#welcomePublicRepos");
+  const welcomeRepoSummary = $("#welcomeRepoSummary");
+
+  if (welcomeUsername && data.profile?.name) {
+    welcomeUsername.textContent = data.profile.name;
+  }
+  if (welcomeLocation && data.profile?.location) {
+    welcomeLocation.textContent = data.profile.location;
+  }
+  if (welcomePublicRepos) {
+    welcomePublicRepos.textContent = `${data.stats.publicRepos} Public Repos`;
+  }
+  if (welcomeRepoSummary) {
+    welcomeRepoSummary.textContent = `${data.stats.totalStars} stars earned across ${data.stats.publicRepos} public repositories.`;
   }
 
   updateLiveCounters(data.stats);
@@ -437,7 +474,18 @@ function renderProfileSection(profile, stats, languages) {
       "BCA Student & Developer crafting immersive web experiences and developer tooling. Passionate about clean interfaces, automotive tech and open source.";
   }
 
-  /* ---------- Sidebar avatar ---------- */
+  /* ---------- Role & Location ---------- */
+
+  const roleEl = $(".profile__role");
+
+  if (roleEl && (profile.company || profile.location)) {
+    roleEl.innerHTML = `
+      <span class="grad-text">
+        ${escapeHTML(profile.company || "BCA Student & Developer")}
+      </span>
+      · ${escapeHTML(profile.location || "New Delhi, India")}
+    `;
+  }
 
   const sidebarAvatar = $(".sidebar__avatar");
 
@@ -526,6 +574,28 @@ function renderProfileSection(profile, stats, languages) {
    PROJECTS
 ========================================================= */
 
+function getSortedRepos(repos) {
+  if (!repos) return [];
+  const list = [...repos];
+  list.sort((a, b) => {
+    switch (activeSort) {
+      case "stars":
+        return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+      case "forks":
+        return (b.forks_count || 0) - (a.forks_count || 0);
+      case "name":
+        return (a.name || "").localeCompare(b.name || "");
+      case "updated":
+      default: {
+        const timeA = new Date(a.pushed_at || a.updated_at || 0).getTime();
+        const timeB = new Date(b.pushed_at || b.updated_at || 0).getTime();
+        return timeB - timeA;
+      }
+    }
+  });
+  return list;
+}
+
 function renderProjectsSection(repos) {
   const grid = $("#projectsGrid");
 
@@ -554,7 +624,7 @@ function renderProjectsSection(repos) {
           .map((r) => r.language)
           .filter(Boolean)
       )
-    );
+    ).sort();
 
     filterChips.innerHTML = `
       <button
@@ -587,9 +657,10 @@ function renderProjectsSection(repos) {
     `;
   }
 
+  const sortedRepos = getSortedRepos(repos);
   const now = new Date();
 
-  grid.innerHTML = repos
+  grid.innerHTML = sortedRepos
     .map((r) => {
       const lang = r.language || "Web";
 
@@ -626,7 +697,7 @@ function renderProjectsSection(repos) {
         const diffDays = Math.floor(
           (now -
             new Date(
-              r.pushed_at || r.updated_at
+              r.pushed_at || r.updated_at || 0
             )) /
             (1000 * 60 * 60 * 24)
         );
@@ -1368,7 +1439,56 @@ function initReveal() {
    ANALYTICS CHART
 ========================================================= */
 
-function renderAnalyticsChart(monthlyUpdates) {
+function getActiveChartData() {
+  if (!liveData) {
+    return { data: new Array(12).fill(0), unit: "events" };
+  }
+
+  switch (chartMetric) {
+    case "prs":
+      return {
+        data:
+          liveData.monthlyPullRequests &&
+          liveData.monthlyPullRequests.length === 12
+            ? liveData.monthlyPullRequests
+            : new Array(12).fill(0),
+        unit: "pull requests"
+      };
+
+    case "issues":
+      return {
+        data:
+          liveData.monthlyIssues &&
+          liveData.monthlyIssues.length === 12
+            ? liveData.monthlyIssues
+            : new Array(12).fill(0),
+        unit: "issues"
+      };
+
+    case "updates":
+      return {
+        data:
+          liveData.monthlyUpdates &&
+          liveData.monthlyUpdates.length === 12
+            ? liveData.monthlyUpdates
+            : new Array(12).fill(0),
+        unit: "events"
+      };
+
+    case "commits":
+    default:
+      return {
+        data:
+          liveData.monthlyCommits &&
+          liveData.monthlyCommits.length === 12
+            ? liveData.monthlyCommits
+            : (liveData.monthlyUpdates || new Array(12).fill(0)),
+        unit: "commits"
+      };
+  }
+}
+
+function renderAnalyticsChart() {
   const canvas = $("#analyticsChart");
 
   if (!canvas) return;
@@ -1419,26 +1539,26 @@ function renderAnalyticsChart(monthlyUpdates) {
     H
   );
 
-  const data =
-    monthlyUpdates &&
-    monthlyUpdates.length === 12
-      ? monthlyUpdates
-      : new Array(12).fill(0);
+  const { data, unit } = getActiveChartData();
 
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ];
+  const months =
+    liveData?.monthlyLabels &&
+    liveData.monthlyLabels.length === 12
+      ? liveData.monthlyLabels
+      : [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec"
+        ];
 
   const pad = {
     top: 16,
@@ -1460,7 +1580,7 @@ function renderAnalyticsChart(monthlyUpdates) {
     pad.bottom;
 
   const max =
-    Math.max(...data, 5) *
+    Math.max(...data, 4) *
     1.15;
 
   const step =
@@ -1478,7 +1598,8 @@ function renderAnalyticsChart(monthlyUpdates) {
         ih -
         (v / max) * ih,
 
-      value: v
+      value: v,
+      unit
     }));
 
   chartPoints = points;
@@ -1507,7 +1628,31 @@ function renderAnalyticsChart(monthlyUpdates) {
       .trim() ||
     "#22d3ee";
 
-  chartLineColor = cyan;
+  const purple =
+    css.getPropertyValue("--purple")
+      .trim() ||
+    "#a78bfa";
+
+  const amber =
+    css.getPropertyValue("--amber")
+      .trim() ||
+    "#fbbf24";
+
+  const green =
+    css.getPropertyValue("--green")
+      .trim() ||
+    "#34d399";
+
+  const accentColor =
+    chartMetric === "prs"
+      ? purple
+      : chartMetric === "issues"
+      ? amber
+      : chartMetric === "updates"
+      ? green
+      : cyan;
+
+  chartLineColor = accentColor;
 
   ctx.font =
     "11px 'JetBrains Mono', monospace";
@@ -1563,12 +1708,18 @@ function renderAnalyticsChart(monthlyUpdates) {
 
   grad.addColorStop(
     0,
-    "rgba(34,211,238,.28)"
+    chartMetric === "prs"
+      ? "rgba(167,139,250,.25)"
+      : chartMetric === "issues"
+      ? "rgba(251,191,36,.22)"
+      : chartMetric === "updates"
+      ? "rgba(52,211,153,.25)"
+      : "rgba(34,211,238,.28)"
   );
 
   grad.addColorStop(
     1,
-    "rgba(34,211,238,0)"
+    "rgba(0,0,0,0)"
   );
 
   ctx.beginPath();
@@ -1612,7 +1763,7 @@ function renderAnalyticsChart(monthlyUpdates) {
     }
   });
 
-  ctx.strokeStyle = cyan;
+  ctx.strokeStyle = accentColor;
 
   ctx.lineWidth = 2.5;
 
@@ -1622,10 +1773,9 @@ function renderAnalyticsChart(monthlyUpdates) {
   ctx.lineCap =
     "round";
 
-  ctx.shadowColor =
-    "rgba(34,211,238,.55)";
+  ctx.shadowColor = accentColor;
 
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 10;
 
   ctx.stroke();
 
@@ -1642,7 +1792,7 @@ function renderAnalyticsChart(monthlyUpdates) {
       Math.PI * 2
     );
 
-    ctx.fillStyle = cyan;
+    ctx.fillStyle = accentColor;
 
     ctx.fill();
   });
@@ -1651,7 +1801,7 @@ function renderAnalyticsChart(monthlyUpdates) {
     "center";
 
   points.forEach((p, i) => {
-    if (i % 2 === 0) {
+    if (i % 2 === 0 || rect.width > 600) {
       ctx.fillText(
         months[i],
         p.x,
@@ -1664,13 +1814,20 @@ function renderAnalyticsChart(monthlyUpdates) {
 }
 
 /* =========================================================
-   ANALYTICS CHART HOVER TOOLTIP
-   -----------------------------------------------------------
-   Ported from nex.js, adapted to script.js's chart state
-   (chartPoints/chartW/chartCtx/chartLineColor set inside
-   renderAnalyticsChart) and to the real monthlyLabels array
-   the backend derives from actual event timestamps.
+   ANALYTICS CHART HOVER TOOLTIP & TABS
 ========================================================= */
+
+function initChartTabs() {
+  const tabs = $$(".chart-tab");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      chartMetric = tab.dataset.metric || "commits";
+      renderAnalyticsChart();
+    });
+  });
+}
 
 function initChartHover() {
   const canvas = $("#analyticsChart");
@@ -1702,7 +1859,7 @@ function initChartHover() {
       if (active !== nearest) {
         active = nearest;
 
-        renderAnalyticsChart(liveData?.monthlyUpdates);
+        renderAnalyticsChart();
 
         if (chartCtx) {
           const point = chartPoints[nearest];
@@ -1724,10 +1881,13 @@ function initChartHover() {
         const monthLabel =
           liveData?.monthlyLabels?.[nearest] || "";
 
+        const unitLabel =
+          chartPoints[nearest]?.unit || "commits";
+
         tip.innerHTML = `
           <strong>${fmt(chartPoints[nearest].value)}</strong>
           ${escapeHTML(monthLabel)}
-          <span style="color:var(--text-faint)">commits</span>
+          <span style="color:var(--text-faint)">${escapeHTML(unitLabel)}</span>
         `;
 
         tip.hidden = false;
@@ -1747,14 +1907,14 @@ function initChartHover() {
     } else if (active !== -1) {
       active = -1;
       tip.hidden = true;
-      renderAnalyticsChart(liveData?.monthlyUpdates);
+      renderAnalyticsChart();
     }
   });
 
   canvas.addEventListener("mouseleave", () => {
     active = -1;
     tip.hidden = true;
-    renderAnalyticsChart(liveData?.monthlyUpdates);
+    renderAnalyticsChart();
   });
 }
 
@@ -2237,9 +2397,7 @@ async function loadLiveData(
       data.languages
     );
 
-    renderAnalyticsChart(
-      data.monthlyUpdates
-    );
+    renderAnalyticsChart();
 
     updateGithubSnapshotStats(
       data.stats
@@ -2338,7 +2496,10 @@ function startAutoRefresh() {
     clearInterval(
       autoRefreshInterval
     );
+    autoRefreshInterval = null;
   }
+
+  if (autoRefreshMs <= 0) return;
 
   autoRefreshInterval =
     setInterval(() => {
@@ -2348,7 +2509,7 @@ function startAutoRefresh() {
       // Force refresh so we actually ask GitHub for fresh data
       // instead of using the old local cache.
       loadLiveData(true);
-    }, AUTO_REFRESH_MS);
+    }, autoRefreshMs);
 }
 
 /* =========================================================
@@ -2356,13 +2517,14 @@ function startAutoRefresh() {
 ========================================================= */
 
 function initTheme() {
-  if (
-    localStorage.getItem(
-      "nexus-theme"
-    ) === "light"
-  ) {
-    document.documentElement.dataset.theme =
-      "light";
+  const savedTheme =
+    localStorage.getItem("nexus-theme") || "dark";
+  document.documentElement.dataset.theme = savedTheme;
+
+  const savedMotion =
+    localStorage.getItem("nexus-reduce-motion");
+  if (savedMotion === "true") {
+    document.body.classList.add("reduce-motion");
   }
 
   const toggle =
@@ -2372,15 +2534,15 @@ function initTheme() {
     toggle.addEventListener(
       "click",
       () => {
-        const isLight =
-          document.documentElement
-            .dataset.theme ===
-          "light";
+        const current =
+          document.documentElement.dataset.theme || "dark";
 
         const nextTheme =
-          isLight
-            ? "dark"
-            : "light";
+          current === "dark"
+            ? "light"
+            : current === "light"
+            ? "oled"
+            : "dark";
 
         document.documentElement.dataset.theme =
           nextTheme;
@@ -2390,9 +2552,9 @@ function initTheme() {
           nextTheme
         );
 
-        renderAnalyticsChart(
-          liveData?.monthlyUpdates
-        );
+        renderAnalyticsChart();
+
+        toast(`Theme set to ${nextTheme}`, "info");
       }
     );
   }
@@ -2601,6 +2763,22 @@ function initSearchAndActions() {
     );
   }
 
+  const sortSelect =
+    $("#projectSort");
+
+  if (sortSelect) {
+    sortSelect.value = activeSort;
+    sortSelect.addEventListener(
+      "change",
+      (e) => {
+        activeSort = e.target.value;
+        renderProjectsSection(
+          liveData?.repos
+        );
+      }
+    );
+  }
+
   const filterChipsContainer =
     $("#filterChips");
 
@@ -2756,8 +2934,128 @@ function initSearchAndActions() {
 }
 
 /* =========================================================
-   MODAL WIRING
+   MODAL WIRING & ACCESSIBILITY
 ========================================================= */
+
+let lastFocusedElement = null;
+
+function openModalElement(modalEl) {
+  if (!modalEl) return;
+  lastFocusedElement = document.activeElement;
+  modalEl.hidden = false;
+  document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => {
+    const focusable = modalEl.querySelector("button, input, select, a[href], [tabindex='0']");
+    if (focusable) {
+      focusable.focus();
+    }
+  });
+}
+
+function closeModalElement(modalEl) {
+  if (!modalEl || modalEl.hidden) return;
+  modalEl.hidden = true;
+  document.body.style.overflow = "";
+  if (lastFocusedElement && typeof lastFocusedElement.focus === "function") {
+    lastFocusedElement.focus();
+  }
+}
+
+function closeAllModals() {
+  closeModalElement($("#projectModal"));
+  closeModalElement($("#settingsModal"));
+  closeModalElement($("#helpModal"));
+}
+
+function initSettings() {
+  const settingsModal = $("#settingsModal");
+  const navSettingsBtn = $("#navSettingsBtn");
+  const profileSettingsLink = $("#profileSettingsLink");
+  const themeSelect = $("#settingsThemeSelect");
+  const reducedMotionCheck = $("#settingsReducedMotion");
+  const refreshIntervalSelect = $("#settingsRefreshInterval");
+  const syncBtn = $("#settingsSyncBtn");
+
+  const currentTheme = document.documentElement.dataset.theme || "dark";
+  if (themeSelect) themeSelect.value = currentTheme;
+
+  const isReduced = document.body.classList.contains("reduce-motion");
+  if (reducedMotionCheck) reducedMotionCheck.checked = isReduced;
+
+  if (refreshIntervalSelect) refreshIntervalSelect.value = String(autoRefreshMs);
+
+  const openSettings = () => openModalElement(settingsModal);
+
+  if (navSettingsBtn) {
+    navSettingsBtn.addEventListener("click", openSettings);
+  }
+  if (profileSettingsLink) {
+    profileSettingsLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      openSettings();
+    });
+  }
+
+  if (themeSelect) {
+    themeSelect.addEventListener("change", (e) => {
+      const theme = e.target.value;
+      document.documentElement.dataset.theme = theme;
+      localStorage.setItem("nexus-theme", theme);
+      renderAnalyticsChart();
+      toast(`Theme set to ${theme}`, "info");
+    });
+  }
+
+  if (reducedMotionCheck) {
+    reducedMotionCheck.addEventListener("change", (e) => {
+      const enabled = e.target.checked;
+      document.body.classList.toggle("reduce-motion", enabled);
+      localStorage.setItem("nexus-reduce-motion", enabled ? "true" : "false");
+      toast(enabled ? "Reduced motion enabled" : "Full animations enabled", "info");
+    });
+  }
+
+  if (refreshIntervalSelect) {
+    refreshIntervalSelect.addEventListener("change", (e) => {
+      autoRefreshMs = Number(e.target.value);
+      localStorage.setItem("nexus-refresh-ms", String(autoRefreshMs));
+      startAutoRefresh();
+      toast(autoRefreshMs > 0 ? `Auto-refresh set to ${autoRefreshMs / 60000}m` : "Auto-refresh disabled", "info");
+    });
+  }
+
+  if (syncBtn) {
+    syncBtn.addEventListener("click", () => {
+      closeModalElement(settingsModal);
+      loadLiveData(true);
+    });
+  }
+
+  if (settingsModal) {
+    settingsModal.addEventListener("click", (e) => {
+      if (e.target.closest("[data-close-settings]")) {
+        closeModalElement(settingsModal);
+      }
+    });
+  }
+}
+
+function initHelp() {
+  const helpModal = $("#helpModal");
+  const navHelpBtn = $("#navHelpBtn");
+
+  if (navHelpBtn) {
+    navHelpBtn.addEventListener("click", () => openModalElement(helpModal));
+  }
+
+  if (helpModal) {
+    helpModal.addEventListener("click", (e) => {
+      if (e.target.closest("[data-close-help]")) {
+        closeModalElement(helpModal);
+      }
+    });
+  }
+}
 
 function initModalWiring() {
   const modal =
@@ -2824,15 +3122,64 @@ function initModalWiring() {
     );
   }
 
+  initSettings();
+  initHelp();
+
   document.addEventListener(
     "keydown",
     (e) => {
       if (
-        e.key === "Escape" &&
-        modal &&
-        !modal.hidden
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === "k"
       ) {
-        closeModal();
+        e.preventDefault();
+        $("#searchInput")?.focus();
+      } else if (
+        e.key === "/" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "SELECT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        e.preventDefault();
+        $("#projectSearch")?.focus();
+      } else if (
+        e.key.toLowerCase() === "t" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "SELECT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        $("#themeToggle")?.click();
+      } else if (
+        e.key.toLowerCase() === "r" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "SELECT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        loadLiveData(true);
+      } else if (
+        e.key.toLowerCase() === "s" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "SELECT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        openModalElement($("#settingsModal"));
+      } else if (
+        e.key === "?" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "SELECT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
+        openModalElement($("#helpModal"));
+      } else if (e.key === "Escape") {
+        closeAllModals();
+        document.body.classList.remove("sidebar-open");
+        const backdrop = $("#sidebarBackdrop");
+        if (backdrop) backdrop.hidden = true;
+        document.body.style.overflow = "";
       }
     }
   );
@@ -2965,6 +3312,7 @@ function init() {
 
   drawSparklines();
 
+  initChartTabs();
   initChartHover();
 
   renderNotifications();
@@ -3012,9 +3360,7 @@ function init() {
       resizeTimer =
         setTimeout(
           () =>
-            renderAnalyticsChart(
-              liveData?.monthlyUpdates
-            ),
+            renderAnalyticsChart(),
           160
         );
     }
