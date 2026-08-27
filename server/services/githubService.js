@@ -32,6 +32,16 @@ const cache = new TTLCache();
 // In-flight promise deduplication
 let inFlightFetchPromise = null;
 
+function formatAuthHeader(rawToken) {
+  if (!rawToken || typeof rawToken !== "string") return null;
+  const token = rawToken.trim().replace(/^["']|["']$/g, "");
+  if (!token) return null;
+  if (token.startsWith("Bearer ") || token.startsWith("token ")) {
+    return token;
+  }
+  return `Bearer ${token}`;
+}
+
 function buildHeaders() {
   const headers = {
     "Accept": "application/vnd.github+json",
@@ -39,8 +49,9 @@ function buildHeaders() {
     "User-Agent": "nexus-dashboard"
   };
 
-  if (env.GITHUB_TOKEN) {
-    headers["Authorization"] = `Bearer ${env.GITHUB_TOKEN}`;
+  const auth = formatAuthHeader(env.GITHUB_TOKEN);
+  if (auth) {
+    headers["Authorization"] = auth;
   }
 
   return headers;

@@ -5,6 +5,7 @@ export default async function run(page) {
     modalsTested: [],
     themeSwitch: false,
     filterAndSort: false,
+    dataIntegrity: null,
     consoleErrors: []
   };
 
@@ -81,6 +82,28 @@ export default async function run(page) {
   await page.fill("#projectSearch", "test");
   await page.selectOption("#projectSort", "stars");
   results.filterAndSort = true;
+
+  // 5. Data integrity verification (ensure real GitHub data populated the DOM)
+  await page.fill("#projectSearch", "");
+  await page.waitForTimeout(400);
+
+  const dataIntegrity = await page.evaluate(() => {
+    const reposCount = Number(document.querySelector("#statRepos")?.textContent?.replace(/,/g, "") || 0);
+    const renderedProjectCards = document.querySelectorAll("#projectsGrid .project-card").length;
+    const timelineItems = document.querySelectorAll("#timeline .timeline-item").length;
+    const liveState = document.querySelector("#liveStatusPill")?.dataset?.state;
+    const username = document.querySelector("#welcomeUsername")?.textContent?.trim();
+
+    return {
+      reposCount,
+      renderedProjectCards,
+      timelineItems,
+      liveState,
+      username
+    };
+  });
+
+  results.dataIntegrity = dataIntegrity;
 
   return results;
 }

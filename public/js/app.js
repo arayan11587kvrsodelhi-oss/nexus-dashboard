@@ -2277,6 +2277,11 @@ async function loadLiveData(
       errorBanner.hidden = false;
     }
 
+    updateLiveStatus({
+      fetchError: userMessage,
+      isCached: false
+    });
+
     console.error(
       "Dashboard error state triggered",
       {
@@ -3136,6 +3141,12 @@ function init() {
       year: "numeric"
     });
     eyebrow.textContent = `${todayStr} · SYSTEM TELEMETRY ACTIVE`;
+  }
+
+  const footerCopyright = $(".footer p");
+  if (footerCopyright) {
+    const currentYear = new Date().getFullYear();
+    footerCopyright.innerHTML = `&copy; ${currentYear} <strong>NEXUS</strong> &middot; Crafted by Aryan Sharma`;
   }
 
   /*

@@ -17,13 +17,19 @@ function toInt(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function cleanString(val, fallback = "") {
+  if (typeof val !== "string") return fallback;
+  const trimmed = val.trim().replace(/^["']|["']$/g, "");
+  return trimmed || fallback;
+}
+
 const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: toInt(process.env.PORT, 8130),
 
-  GITHUB_USERNAME: process.env.GITHUB_USERNAME || "",
-  GITHUB_TOKEN: process.env.GITHUB_TOKEN || "",
-  GITHUB_API_BASE_URL: process.env.GITHUB_API_BASE_URL || "https://api.github.com",
+  GITHUB_USERNAME: cleanString(process.env.GITHUB_USERNAME, "arayan11587kvrsodelhi-oss"),
+  GITHUB_TOKEN: cleanString(process.env.GITHUB_TOKEN, ""),
+  GITHUB_API_BASE_URL: cleanString(process.env.GITHUB_API_BASE_URL, "https://api.github.com").replace(/\/+$/, ""),
 
   GITHUB_CACHE_TTL_MS: toInt(process.env.GITHUB_CACHE_TTL_MS, 5 * 60 * 1000),
 
