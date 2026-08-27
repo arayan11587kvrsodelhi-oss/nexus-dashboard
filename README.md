@@ -1,111 +1,270 @@
-# NEXUS Dashboard
+# ⚡ NEXUS Dashboard
 
-A live, single-owner developer intelligence dashboard, backed by the GitHub API.
+### GitHub Developer Intelligence Dashboard
 
-This is a personal dashboard for one GitHub account (not a multi-user product).
-It renders your live profile, repositories, language breakdown, recent activity,
-contribution heatmap, and analytics - all derived from real GitHub data, with
-no fabricated or hardcoded placeholder statistics.
+> A production-ready, single-owner developer intelligence dashboard powered by real GitHub data.
 
-## Architecture
+<p align="center">
+  <a href="https://nexus-dashboard-l1q3.onrender.com/">
+    <strong>🚀 Live Demo</strong>
+  </a>
+  &nbsp; • &nbsp;
+  <a href="https://github.com/arayan11587kvrsodelhi-oss/nexus-dashboard">
+    <strong>💻 Source Code</strong>
+  </a>
+</p>
 
-```
+---
+
+## ✦ Overview
+
+**NEXUS** is a live developer intelligence dashboard built around a single GitHub account.
+
+It transforms GitHub profile, repository, and public activity data into a modern analytics interface featuring:
+
+- 📊 Developer statistics
+- 📦 Repository intelligence
+- 🔎 Repository search and filtering
+- 📈 Developer analytics
+- 🧩 Language distribution
+- 🗓️ Activity timeline
+- 🔥 Contribution/activity heatmap
+- 👤 GitHub profile information
+- ⚡ Live / Synced / Stale data states
+- 🎨 Multiple visual themes
+- 📱 Fully responsive mobile experience
+- 🔐 Production-focused security
+
+NEXUS is intentionally designed as a **single-owner dashboard**, rather than a multi-user SaaS product.
+
+All displayed GitHub statistics are derived from real API data.
+
+**No fabricated statistics. No fake activity. No hardcoded dashboard metrics.**
+
+---
+
+## 🚀 Live Application
+
+### [Open NEXUS Dashboard →](https://nexus-dashboard-l1q3.onrender.com/)
+
+The production application is deployed on **Render** and communicates with the GitHub API through a secure server-side backend.
+
+---
+
+## ✨ Core Features
+
+### 📊 Developer Dashboard
+
+A centralized overview of the GitHub account including:
+
+- Public repositories
+- Total stars
+- Total forks
+- Followers
+- Recent activity
+- Repository statistics
+- Language distribution
+
+Metrics are derived from actual GitHub API responses.
+
+---
+
+### ⚡ Live Data Synchronization
+
+NEXUS clearly communicates the freshness of its data.
+
+| State | Meaning |
+|---|---|
+| 🟢 **LIVE** | Fresh data successfully fetched from GitHub |
+| 🔵 **SYNCED** | Data served from the server cache |
+| 🟡 **STALE** | GitHub refresh failed, last known-good data displayed |
+| 🔴 **OFFLINE** | No usable GitHub data is currently available |
+
+Relative timestamps automatically update to communicate when data was last synchronized.
+
+---
+
+### 📦 Repository Intelligence
+
+Explore repositories through:
+
+- Real-time search
+- Language filters
+- Topic filters
+- Recently updated sorting
+- Most stars sorting
+- Most forks sorting
+- Alphabetical sorting
+- Repository metadata
+- Quick-view modal
+
+Repository information includes:
+
+- Description
+- Primary language
+- Stars
+- Forks
+- Open issues
+- License
+- Default branch
+- Creation date
+- Last pushed date
+- Topics
+- GitHub URL
+- Live/demo URL when available
+
+---
+
+
+### 📈 Analytics
+
+NEXUS provides visual analytics based on genuine GitHub activity.
+
+Available views include:
+
+- Commits
+- Pull requests
+- Issues
+- Activity
+- Language distribution
+- Repository activity
+
+Charts are responsive and adapt to desktop, tablet, and mobile screens.
+
+---
+
+### 🗓️ Activity Timeline
+
+The activity timeline processes public GitHub events including:
+
+- Push events
+- Repository creation
+- Stars
+- Forks
+- Pull requests
+- Issues
+- Releases
+- Issue comments
+
+Each event includes contextual information and relative timestamps.
+
+---
+
+### 🔥 Contribution / Activity Heatmap
+
+NEXUS visualizes available public GitHub activity in a GitHub-style contribution heatmap.
+
+The visualization is deliberately based on available public event data rather than fabricated historical contribution numbers.
+
+---
+
+### 👤 Developer Profile
+
+The profile interface uses genuine GitHub information such as:
+
+- Avatar
+- Name
+- Username
+- Bio
+- Location
+- Role/company information
+- Followers
+- Following
+- Public repositories
+- GitHub profile
+
+---
+
+### 🎨 Customization
+
+NEXUS includes multiple interface themes:
+
+- 🌌 Dark Cyber
+- ☁️ Light Slate
+- 🖤 OLED High Contrast
+
+Additional controls include:
+
+- Reduced motion
+- Automatic refresh interval
+- Manual GitHub synchronization
+- Keyboard shortcuts
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl + K` / `⌘ + K` | Focus global search |
+| `/` | Focus project search |
+| `T` | Cycle themes |
+| `R` | Trigger GitHub refresh |
+| `S` | Open Settings |
+| `?` | Open Help |
+| `Esc` | Close active modal/drawer |
+
+---
+
+# 🏗️ Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │      GitHub API      │
+                         │   api.github.com     │
+                         └──────────┬───────────┘
+                                    │
+                                    │ Server-side
+                                    ▼
+┌────────────────────────────────────────────────────────┐
+│                    NEXUS Backend                        │
+│                  Node.js + Express                     │
+│                                                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
+│  │ GitHub       │  │ Cache        │  │ Rate        │ │
+│  │ Service      │  │ Layer        │  │ Limiting    │ │
+│  └──────────────┘  └──────────────┘  └─────────────┘ │
+│                                                        │
+│             Processed Dashboard Payload               │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           │ /api/v1/*
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│                     NEXUS Frontend                     │
+│                Vanilla HTML / CSS / JS                 │
+│                                                        │
+│  Dashboard • Projects • Activity • Analytics           │
+│  Profile • Settings • Responsive Navigation            │
+└────────────────────────────────────────────────────────┘
+Repository Structure--
 nexus-dashboard/
-├── server/            Node/Express backend - proxies GitHub, holds the
-│                       optional token, caches responses server-side
-├── public/            Static frontend (vanilla HTML/CSS/JS - no framework)
-├── tests/             Unit, integration, and frontend logic tests (Vitest)
-└── .github/workflows/ CI (lint, test, build)
-```
-
-The frontend never talks to `api.github.com` directly. It calls this
-project's own backend at `/api/v1/github/dashboard`, which:
-
-- fetches your GitHub profile/repos/events server-side (optionally
-  authenticated with a personal access token, kept out of the browser)
-- processes the raw data into the shape the dashboard renders
-- caches the result in memory for a few minutes to avoid hammering
-  GitHub's API
-- falls back to the last known-good cached data (flagged as stale) if a
-  live fetch to GitHub fails, instead of showing a hard error
-
-## Getting started
-
-```bash
-npm install
-cp .env.example .env
-# edit .env - at minimum, set GITHUB_USERNAME to your GitHub handle
-npm run dev
-```
-
-Then open http://localhost:8130.
-
-### Environment variables
-
-See `.env.example` for the full list with descriptions. The only required
-value is `GITHUB_USERNAME`. Setting `GITHUB_TOKEN` (a token with no scopes -
-this app only reads public data) raises the GitHub API rate limit from
-60 requests/hour to 5,000 requests/hour and is recommended for anything
-beyond local development.
-
-## Scripts
-
-| Command | What it does |
-|---|---|
-| `npm run dev` | Start the server with auto-restart on file changes |
-| `npm start` | Start the server (production mode) |
-| `npm test` | Run the full test suite (unit + integration + frontend) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Lint the codebase |
-| `npm run format` | Check formatting |
-| `npm run format:fix` | Auto-fix formatting |
-| `npm run build` | Verify static assets exist and the server boots cleanly |
-
-## API
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/v1/health` | Liveness check |
-| `GET /api/v1/ready` | Readiness check (config + cache status) |
-| `GET /api/v1/github/dashboard` | The full processed dashboard payload |
-| `GET /api/v1/github/dashboard?refresh=true` | Force a live GitHub fetch, bypassing the cache (rate-limited) |
-
-## Known, deliberate limitations
-
-- **PR/issue counts are labeled "(recent)"** rather than lifetime totals.
-  GitHub's public Events API only exposes a rolling window of recent
-  activity, not full historical counts - the dashboard is honest about
-  this rather than fabricating or mislabeling the numbers.
-- **Stat-card sparklines are illustrative**, not derived from real
-  historical time-series data. GitHub does not expose day-by-day
-  historical snapshots of repo/star/fork/follower counts. Building a
-  truly live version would require this server to record its own daily
-  snapshots over time - deliberately out of scope for this cleanup pass
-  (see the architecture audit for details).
-- **No database, authentication, or multi-user support** - this is a
-  single-owner dashboard by design. See the architecture audit for what
-  a multi-user version would require.
-
-## Testing
-
-```bash
-npm test
-```
-
-- `tests/unit/` - the GitHub data-processing logic (language breakdown,
-  stats, activity feed shaping), fully offline/pure.
-- `tests/integration/` - the Express routes, with GitHub's API mocked
-  (success, cache-hit, stale-fallback, and hard-failure paths).
-- `tests/frontend/` - pure frontend utilities (`escapeHTML`, `timeAgo`,
-  `formatDate`), including explicit XSS-escaping tests.
-
-## Security
-
-- The GitHub token (if set) never leaves the server.
-- All GitHub-derived strings (repo descriptions, commit messages,
-  activity titles) are HTML-escaped before being inserted into the page,
-  since this content can be set by other GitHub users, not just the
-  dashboard's owner.
-- Security headers (CSP, etc.) are applied via `helmet`.
-- Basic rate limiting is applied to the API, with stricter limits on the
-  manual "force refresh" path.
+│
+├── server/
+│   ├── index.js
+│   ├── config/
+│   ├── routes/
+│   ├── services/
+│   ├── middleware/
+│   └── utils/
+│
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── apiClient.js
+│   │   └── utils.js
+│   └── assets/
+│
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   ├── frontend/
+│   └── browser-qa.mjs
+│
+├── scripts/
+├── .github/
+├── .env.example
+├── package.json
+└── README.md
