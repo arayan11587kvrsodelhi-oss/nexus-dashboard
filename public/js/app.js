@@ -333,11 +333,23 @@ function updateLiveCounters(stats) {
 }
 
 /* =========================================================
-   DASHBOARD QUICK STATS
+   DASHBOARD QUICK STATS & GREETING
 ========================================================= */
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "GOOD MORNING";
+  if (hour < 18) return "GOOD AFTERNOON";
+  return "GOOD EVENING";
+}
 
 function updateDashboard(data) {
   if (!data || !data.stats) return;
+
+  const greetingEl = $("#greetingTime");
+  if (greetingEl) {
+    greetingEl.textContent = getGreeting();
+  }
 
   const repoCount = $("#repoCount");
   const followersCount = $("#followersCount");
@@ -386,16 +398,16 @@ function updateDashboard(data) {
   const welcomeRepoSummary = $("#welcomeRepoSummary");
 
   if (welcomeUsername && data.profile?.name) {
-    welcomeUsername.textContent = data.profile.name;
+    welcomeUsername.textContent = data.profile.name.toUpperCase();
   }
   if (welcomeLocation && data.profile?.location) {
-    welcomeLocation.textContent = data.profile.location;
+    welcomeLocation.innerHTML = `<i class="dot dot--purple"></i>${escapeHTML(data.profile.location)}`;
   }
   if (welcomePublicRepos) {
-    welcomePublicRepos.textContent = `${data.stats.publicRepos} Public Repos`;
+    welcomePublicRepos.innerHTML = `<i class="dot dot--cyan"></i>${data.stats.publicRepos} Repositories`;
   }
   if (welcomeRepoSummary) {
-    welcomeRepoSummary.textContent = `${data.stats.totalStars} stars earned across ${data.stats.publicRepos} public repositories.`;
+    welcomeRepoSummary.textContent = `Your development ecosystem, at a glance. ${data.stats.totalStars} stars earned across ${data.stats.publicRepos} public repositories.`;
   }
 
   updateLiveCounters(data.stats);
@@ -840,20 +852,10 @@ function renderProjectsSection(repos) {
 
 function generateRepoVisual(repo) {
   const name = escapeHTML(repo.name);
-
-  const stars =
-    fmt(repo.stargazers_count || 0);
-
-  const lang =
-    escapeHTML(repo.language || "Code");
-
-  /*
-    Sanitize ID so SVG gradient IDs remain valid.
-  */
-  const safeId = String(repo.name || "repo").replace(
-    /[^a-zA-Z0-9_-]/g,
-    "-"
-  );
+  const stars = fmt(repo.stargazers_count || 0);
+  const forks = fmt(repo.forks_count || 0);
+  const lang = escapeHTML(repo.language || "Code");
+  const safeId = String(repo.name || "repo").replace(/[^a-zA-Z0-9_-]/g, "-");
 
   return `
     <svg
@@ -862,159 +864,52 @@ function generateRepoVisual(repo) {
       role="img"
       aria-label="${escapeAttribute(repo.name)} preview"
     >
-
       <defs>
-
-        <linearGradient
-          id="bg-${safeId}"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-          <stop
-            offset="0"
-            stop-color="#0b1220"
-          />
-
-          <stop
-            offset="1"
-            stop-color="#151029"
-          />
+        <linearGradient id="bg-${safeId}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#07090e" />
+          <stop offset="100%" stop-color="#0d111a" />
         </linearGradient>
-
-        <linearGradient
-          id="hl-${safeId}"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="0"
-        >
-          <stop
-            offset="0"
-            stop-color="#22d3ee"
-          />
-
-          <stop
-            offset="1"
-            stop-color="#a78bfa"
-          />
+        <linearGradient id="beam-${safeId}" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="rgba(56, 189, 248, 0)" />
+          <stop offset="50%" stop-color="rgba(56, 189, 248, 0.45)" />
+          <stop offset="100%" stop-color="rgba(129, 140, 248, 0)" />
         </linearGradient>
-
+        <pattern id="grid-${safeId}" width="24" height="24" patternUnits="userSpaceOnUse">
+          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(255, 255, 255, 0.025)" stroke-width="1" />
+        </pattern>
       </defs>
 
-      <rect
-        width="480"
-        height="270"
-        fill="url(#bg-${safeId})"
-      />
+      <rect width="480" height="270" fill="url(#bg-${safeId})" />
+      <rect width="480" height="270" fill="url(#grid-${safeId})" />
 
-      <g
-        stroke="#22d3ee"
-        stroke-width="1"
-        opacity="0.15"
-      >
-        <line
-          x1="0"
-          y1="60"
-          x2="480"
-          y2="60"
-        />
+      <!-- Top Edge Light Beam -->
+      <rect x="0" y="0" width="480" height="1" fill="url(#beam-${safeId})" />
 
-        <line
-          x1="0"
-          y1="120"
-          x2="480"
-          y2="120"
-        />
+      <!-- Center Terminal Box -->
+      <rect x="36" y="32" width="408" height="206" rx="10" fill="#06080d" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+      <rect x="36" y="32" width="408" height="1" fill="rgba(255, 255, 255, 0.12)" />
 
-        <line
-          x1="0"
-          y1="180"
-          x2="480"
-          y2="180"
-        />
+      <!-- Window Header Bar -->
+      <line x1="36" y1="62" x2="444" y2="62" stroke="rgba(255, 255, 255, 0.06)" stroke-width="1" />
+      <circle cx="56" cy="47" r="3" fill="#f87171" opacity="0.8" />
+      <circle cx="67" cy="47" r="3" fill="#fbbf24" opacity="0.8" />
+      <circle cx="78" cy="47" r="3" fill="#34d399" opacity="0.8" />
+      <text x="240" y="51" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="500" fill="#64748b" letter-spacing="0.08em">main · origin/main</text>
+
+      <!-- Main Repo Title -->
+      <text x="240" y="112" text-anchor="middle" font-family="'Space Grotesk', -apple-system, sans-serif" font-size="19" font-weight="700" fill="#f8fafc" letter-spacing="-0.01em">${name}</text>
+
+      <!-- Telemetry Tags -->
+      <text x="240" y="138" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#38bdf8" font-weight="500">
+        ${lang} · ⭐ ${stars} · 🍴 ${forks}
+      </text>
+
+      <!-- Bottom Badge -->
+      <g transform="translate(145, 166)">
+        <rect width="190" height="24" rx="5" fill="rgba(56, 189, 248, 0.06)" stroke="rgba(56, 189, 248, 0.22)" stroke-width="1" />
+        <circle cx="18" cy="12" r="2.5" fill="#34d399" />
+        <text x="28" y="15.5" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.08em">PRODUCTION TELEMETRY</text>
       </g>
-
-      <rect
-        x="40"
-        y="40"
-        width="400"
-        height="190"
-        rx="12"
-        fill="#111827"
-        stroke="#22d3ee"
-        stroke-opacity="0.3"
-        stroke-width="1.5"
-      />
-
-      <circle
-        cx="65"
-        cy="62"
-        r="4"
-        fill="#f87171"
-      />
-
-      <circle
-        cx="80"
-        cy="62"
-        r="4"
-        fill="#fbbf24"
-      />
-
-      <circle
-        cx="95"
-        cy="62"
-        r="4"
-        fill="#34d399"
-      />
-
-      <text
-        x="240"
-        y="115"
-        text-anchor="middle"
-        font-family="'Space Grotesk', sans-serif"
-        font-size="22"
-        font-weight="700"
-        fill="#e8ecf4"
-      >
-        ${name}
-      </text>
-
-      <text
-        x="240"
-        y="145"
-        text-anchor="middle"
-        font-family="monospace"
-        font-size="12"
-        fill="#22d3ee"
-        opacity="0.9"
-      >
-        ${lang} · ${stars} stars
-      </text>
-
-      <rect
-        x="140"
-        y="170"
-        width="200"
-        height="32"
-        rx="8"
-        fill="url(#hl-${safeId})"
-        opacity="0.25"
-      />
-
-      <text
-        x="240"
-        y="191"
-        text-anchor="middle"
-        font-family="monospace"
-        font-size="11"
-        font-weight="600"
-        fill="#34d399"
-      >
-        ACTIVE REPOSITORY
-      </text>
-
     </svg>
   `;
 }
@@ -1330,21 +1225,14 @@ function animateSkills() {
 function drawSparklines() {
   $$(".sparkline").forEach((sparkline) => {
     const raw = sparkline.dataset.spark;
-
     if (!raw) return;
 
-    const data = raw
-      .split(",")
-      .map(Number)
-      .filter(Number.isFinite);
-
+    const data = raw.split(",").map(Number).filter(Number.isFinite);
     if (data.length < 2) return;
 
     const width = 200;
-    const height = 30;
-
+    const height = 28;
     const namespace = "http://www.w3.org/2000/svg";
-
     const svg = document.createElementNS(namespace, "svg");
 
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
@@ -1371,26 +1259,18 @@ function drawSparklines() {
       : "var(--green)";
 
     const area = document.createElementNS(namespace, "path");
-
     area.setAttribute(
       "d",
-      `M${points[0][0]},${height} ${points
-        .map((point) => `L${point[0]},${point[1]}`)
-        .join(" ")} L${points[points.length - 1][0]},${height} Z`
+      `M${points[0][0]},${height} ${points.map((p) => `L${p[0]},${p[1]}`).join(" ")} L${points[points.length - 1][0]},${height} Z`
     );
-
     area.setAttribute("fill", color);
-    area.setAttribute("opacity", "0.12");
+    area.setAttribute("opacity", "0.08");
 
     const line = document.createElementNS(namespace, "polyline");
-
-    line.setAttribute(
-      "points",
-      points.map((point) => point.join(",")).join(" ")
-    );
+    line.setAttribute("points", points.map((p) => p.join(",")).join(" "));
     line.setAttribute("fill", "none");
     line.setAttribute("stroke", color);
-    line.setAttribute("stroke-width", "2");
+    line.setAttribute("stroke-width", "1.5");
     line.setAttribute("stroke-linecap", "round");
     line.setAttribute("stroke-linejoin", "round");
 
@@ -1654,146 +1534,71 @@ function renderAnalyticsChart() {
 
   chartLineColor = accentColor;
 
-  ctx.font =
-    "11px 'JetBrains Mono', monospace";
-
-  ctx.textBaseline =
-    "middle";
-
+  ctx.font = "10.5px 'JetBrains Mono', monospace";
+  ctx.textBaseline = "middle";
   ctx.strokeStyle = grid;
-
   ctx.fillStyle = faint;
-
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i++) {
-    const y =
-      pad.top +
-      (ih / 4) * i;
-
+    const y = pad.top + (ih / 4) * i;
     ctx.beginPath();
-
-    ctx.moveTo(
-      pad.left,
-      y
-    );
-
-    ctx.lineTo(
-      rect.width -
-        pad.right,
-      y
-    );
-
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(rect.width - pad.right, y);
     ctx.stroke();
 
     ctx.fillText(
-      fmt(
-        Math.round(
-          (max / 4) *
-            (4 - i)
-        )
-      ),
+      fmt(Math.round((max / 4) * (4 - i))),
       6,
       y
     );
   }
 
-  const grad =
-    ctx.createLinearGradient(
-      0,
-      pad.top,
-      0,
-      pad.top + ih
-    );
-
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ih);
   grad.addColorStop(
     0,
     chartMetric === "prs"
-      ? "rgba(167,139,250,.25)"
+      ? "rgba(129,140,248,.18)"
       : chartMetric === "issues"
-      ? "rgba(251,191,36,.22)"
+      ? "rgba(251,191,36,.16)"
       : chartMetric === "updates"
-      ? "rgba(52,211,153,.25)"
-      : "rgba(34,211,238,.28)"
+      ? "rgba(52,211,153,.18)"
+      : "rgba(56,189,248,.2)"
   );
-
-  grad.addColorStop(
-    1,
-    "rgba(0,0,0,0)"
-  );
+  grad.addColorStop(1, "rgba(0,0,0,0)");
 
   ctx.beginPath();
-
-  ctx.moveTo(
-    points[0].x,
-    pad.top + ih
-  );
-
+  ctx.moveTo(points[0].x, pad.top + ih);
   points.forEach((p) => {
-    ctx.lineTo(
-      p.x,
-      p.y
-    );
+    ctx.lineTo(p.x, p.y);
   });
-
-  ctx.lineTo(
-    points[points.length - 1].x,
-    pad.top + ih
-  );
-
+  ctx.lineTo(points[points.length - 1].x, pad.top + ih);
   ctx.closePath();
-
   ctx.fillStyle = grad;
-
   ctx.fill();
 
   ctx.beginPath();
-
   points.forEach((p, i) => {
     if (i === 0) {
-      ctx.moveTo(
-        p.x,
-        p.y
-      );
+      ctx.moveTo(p.x, p.y);
     } else {
-      ctx.lineTo(
-        p.x,
-        p.y
-      );
+      ctx.lineTo(p.x, p.y);
     }
   });
 
   ctx.strokeStyle = accentColor;
-
-  ctx.lineWidth = 2.5;
-
-  ctx.lineJoin =
-    "round";
-
-  ctx.lineCap =
-    "round";
-
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
   ctx.shadowColor = accentColor;
-
-  ctx.shadowBlur = 10;
-
+  ctx.shadowBlur = 8;
   ctx.stroke();
-
   ctx.shadowBlur = 0;
 
   points.forEach((p) => {
     ctx.beginPath();
-
-    ctx.arc(
-      p.x,
-      p.y,
-      3.5,
-      0,
-      Math.PI * 2
-    );
-
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
     ctx.fillStyle = accentColor;
-
     ctx.fill();
   });
 
@@ -3317,20 +3122,20 @@ function init() {
 
   renderNotifications();
 
-  const eyebrow =
-    $(".eyebrow");
+  const greetingEl = $("#greetingTime");
+  if (greetingEl) {
+    greetingEl.textContent = getGreeting();
+  }
 
+  const eyebrow = $(".eyebrow");
   if (eyebrow) {
-    eyebrow.textContent =
-      new Date().toLocaleDateString(
-        "en-US",
-        {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        }
-      );
+    const todayStr = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+    eyebrow.textContent = `${todayStr} · SYSTEM TELEMETRY ACTIVE`;
   }
 
   /*
