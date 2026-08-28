@@ -93,13 +93,17 @@ export default async function run(page) {
     const timelineItems = document.querySelectorAll("#timeline .timeline-item").length;
     const liveState = document.querySelector("#liveStatusPill")?.dataset?.state;
     const username = document.querySelector("#welcomeUsername")?.textContent?.trim();
+    const donutSegments = document.querySelectorAll("#langDonutSegments .lang-donut-segment").length;
+    const footnoteIconRect = document.querySelector(".panel__foot-note svg")?.getBoundingClientRect();
 
     return {
       reposCount,
       renderedProjectCards,
       timelineItems,
       liveState,
-      username
+      username,
+      donutSegments,
+      footnoteIconWidth: footnoteIconRect?.width || 0
     };
   });
 

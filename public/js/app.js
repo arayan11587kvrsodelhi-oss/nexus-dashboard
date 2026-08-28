@@ -578,6 +578,8 @@ function renderProfileSection(profile, stats, languages) {
 
   /* ---------- Language distribution ---------- */
 
+  renderLanguageDonut(languages);
+
   const langBars = $(".lang-bars");
   const skillBars = $("#skillBars");
 
@@ -634,6 +636,64 @@ function renderProfileSection(profile, stats, languages) {
         `;
       })
       .join("");
+  }
+}
+
+/* =========================================================
+   LANGUAGE DONUT CHART
+========================================================= */
+
+function renderLanguageDonut(languages) {
+  const segmentsGroup = $("#langDonutSegments");
+  const topEl = $("#langDonutTop");
+  const topPercentEl = $("#langDonutTopPercent");
+
+  if (!segmentsGroup || !languages || languages.length === 0) {
+    if (topEl) topEl.textContent = "N/A";
+    if (topPercentEl) topPercentEl.textContent = "0%";
+    if (segmentsGroup) segmentsGroup.innerHTML = "";
+    return;
+  }
+
+  const topLangs = languages.slice(0, 4);
+  const r = 58;
+  const circumference = 2 * Math.PI * r;
+  let accumulatedPercent = 0;
+
+  const segmentsSvg = topLangs
+    .map((lang, index) => {
+      const percent = Math.max(0, Math.min(100, Number(lang.percent) || 0));
+      const segmentLength = (percent / 100) * circumference;
+      const gap = topLangs.length > 1 ? 4 : 0;
+      const visibleLength = Math.max(0, segmentLength - gap);
+      const colorKey = LANG_COLORS[lang.name] || (index === 0 ? "cyan" : index === 1 ? "purple" : index === 2 ? "green" : "amber");
+      const strokeColor = `var(--${colorKey})`;
+      const strokeDasharray = `${visibleLength.toFixed(1)} ${(circumference - visibleLength).toFixed(1)}`;
+      const strokeDashoffset = (-((accumulatedPercent / 100) * circumference)).toFixed(1);
+
+      accumulatedPercent += percent;
+
+      return `
+        <circle
+          cx="80"
+          cy="80"
+          r="${r}"
+          class="lang-donut-segment"
+          style="stroke: ${strokeColor}; stroke-dasharray: ${strokeDasharray}; stroke-dashoffset: ${strokeDashoffset};"
+        />
+      `;
+    })
+    .join("");
+
+  segmentsGroup.innerHTML = segmentsSvg;
+
+  if (topEl && topLangs[0]) {
+    const rawName = topLangs[0].name || "JS";
+    const shortName = rawName.length <= 4 ? rawName : rawName.slice(0, 3).toUpperCase();
+    topEl.textContent = shortName;
+  }
+  if (topPercentEl && topLangs[0]) {
+    topPercentEl.textContent = `${topLangs[0].percent}%`;
   }
 }
 
