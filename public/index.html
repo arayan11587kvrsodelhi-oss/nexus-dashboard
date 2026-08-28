@@ -43,6 +43,7 @@
     <div class="bg-grid"></div>
     <div class="bg-radial bg-radial--top"></div>
     <div class="bg-radial bg-radial--bottom"></div>
+    <div class="bg-orbital"></div>
     <div class="bg-beam"></div>
   </div>
 
@@ -52,16 +53,16 @@
     <div class="sidebar__brand">
       <div class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none">
-          <path d="M16 3 28 9v13L16 28 4 22V9L16 3Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" />
-          <circle cx="16" cy="16" r="4.5" stroke="currentColor" stroke-width="2" />
-          <path d="M16 6.5v4M16 21.5v4M6.5 16h4M21.5 16h4" stroke="currentColor" stroke-width="1.8"
+          <path d="M16 3 28 9v13L16 28 4 22V9L16 3Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+          <circle cx="16" cy="16" r="4" stroke="currentColor" stroke-width="2" />
+          <path d="M16 6.5v4M16 21.5v4M6.5 16h4M21.5 16h4" stroke="currentColor" stroke-width="1.6"
             stroke-linecap="round" />
         </svg>
       </div>
 
       <div class="sidebar__brand-text">
         <span class="sidebar__brand-name">NEXUS</span>
-        <span class="sidebar__brand-sub">DEV WORKSPACE</span>
+        <span class="sidebar__brand-sub">COMMAND CENTER</span>
       </div>
     </div>
 
@@ -76,7 +77,7 @@
           <rect x="3" y="14" width="7" height="7" rx="1.5" />
           <rect x="14" y="14" width="7" height="7" rx="1.5" />
         </svg>
-        <span>Dashboard</span>
+        <span>Overview</span>
       </a>
 
       <a class="nav-link" href="#projects" data-nav="projects">
@@ -84,15 +85,23 @@
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
         </svg>
-        <span>Projects</span>
-        <span class="nav-badge">4</span>
+        <span>Repositories</span>
+        <span class="nav-badge" id="navRepoBadge">Repos</span>
       </a>
 
       <a class="nav-link" href="#activity" data-nav="activity">
         <svg viewBox="0 0 24 24">
           <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
         </svg>
-        <span>Activity</span>
+        <span>Telemetry</span>
+      </a>
+
+      <a class="nav-link" href="#contributions" data-nav="contributions">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M8 12h8M8 16h5M12 8h.01" />
+        </svg>
+        <span>Contributions</span>
       </a>
 
       <a class="nav-link" href="#analytics" data-nav="analytics">
@@ -102,15 +111,7 @@
         <span>Analytics</span>
       </a>
 
-      <p class="sidebar__label sidebar__label--mt">Workspace</p>
-
-      <a class="nav-link" href="#contributions" data-nav="contributions">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="3" />
-          <path d="M8 12h8M8 16h5M12 8h.01" />
-        </svg>
-        <span>Contributions</span>
-      </a>
+      <p class="sidebar__label sidebar__label--mt">Developer</p>
 
       <a class="nav-link" href="#profile" data-nav="profile">
         <svg viewBox="0 0 24 24">
@@ -125,11 +126,11 @@
           <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.7 21a2 2 0 0 1-3.4 0" />
         </svg>
-        <span>Notifications</span>
-        <span class="nav-badge nav-badge--hot">3</span>
+        <span>System Log</span>
+        <span class="nav-badge nav-badge--hot">Live</span>
       </a>
 
-      <p class="sidebar__label sidebar__label--mt">General</p>
+      <p class="sidebar__label sidebar__label--mt">Preferences</p>
 
       <button class="nav-link nav-btn-link" id="navSettingsBtn" type="button" aria-label="Open settings dialog">
         <svg viewBox="0 0 24 24">
@@ -146,7 +147,7 @@
           <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
           <circle cx="12" cy="17" r=".4" fill="currentColor" />
         </svg>
-        <span>Help & Shortcuts</span>
+        <span>Shortcuts</span>
       </button>
 
     </nav>
@@ -156,16 +157,13 @@
       <div class="upgrade-card">
         <div class="upgrade-card__icon">
           <svg viewBox="0 0 24 24">
-            <path d="M13 2 3 14h7l-1 8 11-13h-8l1-7Z" />
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
         </div>
 
         <div class="upgrade-card__body">
-          <strong>Unlock NEXUS Pro</strong>
-          <p>Advanced analytics & unlimited repos.</p>
-          <button class="btn btn--glow btn--sm" type="button">
-            Upgrade now
-          </button>
+          <strong>NEXUS v2.1</strong>
+          <p>Developer Intelligence Engine</p>
         </div>
       </div>
 
@@ -177,7 +175,7 @@
           <span>aryan@nexus.dev</span>
         </div>
 
-        <span class="status-dot" title="Online"></span>
+        <span class="status-dot" title="Telemetry Synchronized"></span>
       </div>
 
     </div>
@@ -382,48 +380,59 @@
         </button>
       </div>
 
-      <!-- Welcome Hero -->
+      <!-- Welcome Hero / Developer Command Center -->
       <section class="welcome reveal" id="welcome">
 
-        <div class="welcome__text">
-
-          <p class="eyebrow" id="heroEyebrow">LIVE WORKSPACE TELEMETRY</p>
-
-          <h1 id="heroGreeting">
-            <span id="greetingTime">GOOD EVENING</span>,
-            <span class="grad-text" id="welcomeUsername">ARYAN SHARMA</span>
-          </h1>
-
-          <p class="welcome__sub" id="welcomeRepoSummary">
-            Your development ecosystem, at a glance. Real-time GitHub analytics, repository intelligence, and workspace telemetry.
-          </p>
-
-          <div class="welcome__chips">
-            <span class="chip" id="welcomePublicRepos">
-              <i class="dot dot--cyan"></i>
-              Public Repositories
-            </span>
-
-            <span class="chip" id="welcomeLocation">
-              <i class="dot dot--purple"></i>
-              New Delhi, India
-            </span>
-
-            <span class="chip">
-              <i class="dot dot--green"></i>
-              Live Telemetry
-            </span>
+        <div class="welcome__identity-wrap">
+          <div class="welcome__avatar-col">
+            <div class="welcome__avatar-frame">
+              <img src="assets/aryanpic.jpeg" alt="Aryan Sharma" class="welcome__avatar" id="heroAvatar" />
+              <span class="status-dot status-dot--live" title="Telemetry Synchronized"></span>
+            </div>
           </div>
 
+          <div class="welcome__text">
+            <p class="eyebrow" id="heroEyebrow">SYSTEM TELEMETRY ACTIVE</p>
+
+            <h1 id="heroGreeting">
+              <span id="greetingTime">GOOD EVENING</span>,
+              <span class="grad-text" id="welcomeUsername">ARYAN SHARMA</span>
+            </h1>
+
+            <p class="welcome__handle" id="heroHandle">
+              Developer Intelligence Overview · <a href="https://github.com/arayan11587kvrsodelhi-oss" target="_blank" rel="noopener" id="heroGithubLink">@arayan11587kvrsodelhi-oss</a>
+            </p>
+
+            <p class="welcome__sub" id="welcomeRepoSummary">
+              Your development ecosystem, at a glance. Real-time GitHub analytics, repository intelligence, and workspace telemetry.
+            </p>
+
+            <div class="welcome__chips">
+              <span class="chip" id="welcomePublicRepos">
+                <i class="dot dot--cyan"></i>
+                Public Repositories
+              </span>
+
+              <span class="chip" id="welcomeLocation">
+                <i class="dot dot--purple"></i>
+                New Delhi, India
+              </span>
+
+              <span class="chip" id="welcomeSyncState">
+                <i class="dot dot--green"></i>
+                Live Telemetry Active
+              </span>
+            </div>
+          </div>
         </div>
 
         <div class="welcome__actions">
-
           <a class="btn btn--primary" href="#projects">
             <svg viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" />
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
             </svg>
-            Explore projects
+            Explore repositories
           </a>
 
           <button class="btn btn--ghost" id="cmdPaletteHint" type="button">
@@ -434,6 +443,14 @@
             Quick actions (⌘K)
           </button>
 
+          <a class="btn btn--ghost" id="heroExternalGhBtn" href="https://github.com/arayan11587kvrsodelhi-oss" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+              <path d="M9 18c-4.51 2-5-2-7-2" />
+            </svg>
+            GitHub Profile
+          </a>
         </div>
       </section>
 
@@ -567,155 +584,76 @@
 
       </section>
 
-      <!-- ===== RECENT PROJECTS ===== -->
-      <section class="section projects-section reveal" id="projects">
+      <!-- ===== CONTRIBUTION INTELLIGENCE SHOWCASE ===== -->
+      <section class="panel panel--showcase reveal" id="contributions">
 
-        <div class="section-head">
-
+        <div class="panel__head">
           <div>
-            <h2 class="section-title">Repositories & Projects</h2>
+            <div class="panel__badge-row">
+              <span class="panel-eyebrow">TELEMETRY MATRIX</span>
+              <span class="chip chip--xs chip--live">Public Activity</span>
+            </div>
+            <h2 class="section-title">Contribution Activity</h2>
             <p class="section-sub">
-              Live GitHub repository intelligence with filter & search.
+              <strong id="yearTotal">0</strong> activity events recorded in the available telemetry window.
             </p>
           </div>
 
-          <div class="projects-controls">
-
-            <div class="search-box" id="projectSearchBox">
-              <svg viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-
-              <input type="search" id="projectSearch" placeholder="Search projects…" aria-label="Search projects"
-                autocomplete="off" />
+          <div class="panel__head-right">
+            <div class="contribution-legend" id="contributionLegend">
+              <span class="legend-label">Less</span>
+              <span class="legend-cell" data-l="0"></span>
+              <span class="legend-cell" data-l="1"></span>
+              <span class="legend-cell" data-l="2"></span>
+              <span class="legend-cell" data-l="3"></span>
+              <span class="legend-cell" data-l="4"></span>
+              <span class="legend-label">More</span>
             </div>
-
-            <div class="sort-select-wrap">
-              <svg viewBox="0 0 24 24">
-                <path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16" />
-              </svg>
-              <select class="sort-select" id="projectSort" aria-label="Sort repositories">
-                <option value="updated">Recently updated</option>
-                <option value="stars">Most stars</option>
-                <option value="forks">Most forks</option>
-                <option value="name">Name (A-Z)</option>
-              </select>
-            </div>
-
-            <div class="filter-chips" id="filterChips" role="group" aria-label="Filter projects by language">
-              <button class="filter-chip is-active" data-filter="all" type="button">
-                All
-              </button>
-            </div>
-
           </div>
         </div>
 
-        <div class="projects-grid" id="projectsGrid"></div>
+        <div class="contrib-scroll">
+          <div class="contrib-wrap" id="contribGrid"></div>
+        </div>
 
-        <div class="empty-state" id="projectsEmpty" hidden>
-
-          <svg viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-
-          <h3>No projects found</h3>
-
-          <p>
-            Try a different keyword or category.
-          </p>
-
-          <button class="btn btn--ghost" id="clearFilters" type="button">
-            Clear filters
-          </button>
-
+        <div class="panel__foot-note">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>Derived honestly from GitHub public events stream. Reflects active commit and repository interactions.</span>
         </div>
 
       </section>
 
-      <!-- ===== GRID: contributions + timeline ===== -->
+      <!-- ===== GRID: activity + analytics ===== -->
       <div class="split-grid">
-
-        <section class="panel reveal" id="contributions">
-
-          <div class="panel__head">
-
-            <div>
-              <h2 class="section-title">Contributions</h2>
-
-              <p class="section-sub">
-                <strong id="yearTotal">0</strong>
-                contributions in the last year
-              </p>
-            </div>
-
-            <div class="contribution-legend" id="contributionLegend"></div>
-
-          </div>
-
-          <div class="contrib-scroll">
-            <div class="contrib-wrap" id="contribGrid"></div>
-          </div>
-
-        </section>
 
         <section class="panel reveal" id="activity">
 
           <div class="panel__head">
-
             <div>
-              <h2 class="section-title">Activity Timeline</h2>
+              <span class="panel-eyebrow">EVENT STREAM</span>
+              <h2 class="section-title">Activity Telemetry</h2>
               <p class="section-sub">
-                Latest events across your repos.
+                Real-time chronological events from GitHub repositories.
               </p>
             </div>
-
           </div>
 
           <ol class="timeline" id="timeline"></ol>
 
           <button class="btn btn--ghost btn--block" id="moreActivity" type="button">
-            Load more activity
+            Load more events
           </button>
-
-        </section>
-
-      </div>
-
-      <!-- ===== GRID: skills + analytics ===== -->
-      <div class="split-grid">
-
-        <section class="panel reveal" id="skills">
-
-          <div class="panel__head">
-
-            <div>
-              <h2 class="section-title">
-                Technology Radar
-              </h2>
-
-              <p class="section-sub">
-                Core skills & proficiency.
-              </p>
-            </div>
-
-          </div>
-
-          <ul class="skill-list" id="skillList"></ul>
 
         </section>
 
         <section class="panel reveal" id="analytics">
 
           <div class="panel__head">
-
             <div>
+              <span class="panel-eyebrow">INTELLIGENCE RADAR</span>
               <h2 class="section-title">Analytics</h2>
-
               <p class="section-sub">
-                Commit activity · last 12 months
+                Monthly distribution · Rolling 12-month event window
               </p>
             </div>
 
@@ -736,128 +674,171 @@
                 Activity
               </button>
             </div>
-
           </div>
 
           <div class="chart-wrap">
-
             <canvas id="analyticsChart" aria-label="Interactive commit analytics chart"></canvas>
-
             <div class="chart-tooltip" id="chartTooltip" hidden></div>
-
           </div>
 
         </section>
 
       </div>
 
-      <!-- ===== GRID: notifications + connections ===== -->
-      <div class="split-grid">
+      <!-- ===== RECENT PROJECTS ===== -->
+      <section class="section projects-section reveal" id="projects">
 
-        <section class="panel reveal" id="notifications-panel">
-
-          <div class="panel__head">
-
-            <div>
-              <h2 class="section-title">
-                Notifications
-              </h2>
-
-              <p class="section-sub">
-                Recent updates from your workspace.
-              </p>
-            </div>
-
+        <div class="section-head">
+          <div>
+            <span class="panel-eyebrow">DOSSIER INDEX</span>
+            <h2 class="section-title">Repositories & Projects</h2>
+            <p class="section-sub">
+              Live GitHub repository intelligence with real-time query & language filtering.
+            </p>
           </div>
 
-          <ul class="notif-list notif-list--panel" id="notifListPanel"></ul>
+          <div class="projects-controls">
+            <div class="search-box" id="projectSearchBox">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input type="search" id="projectSearch" placeholder="Filter repositories…" aria-label="Search repositories"
+                autocomplete="off" />
+            </div>
 
+            <div class="sort-select-wrap">
+              <svg viewBox="0 0 24 24">
+                <path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16" />
+              </svg>
+              <select class="sort-select" id="projectSort" aria-label="Sort repositories">
+                <option value="updated">Recently updated</option>
+                <option value="stars">Most stars</option>
+                <option value="forks">Most forks</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+            </div>
+
+            <div class="filter-chips" id="filterChips" role="group" aria-label="Filter projects by language">
+              <button class="filter-chip is-active" data-filter="all" type="button">
+                All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="projects-grid" id="projectsGrid"></div>
+
+        <div class="empty-state" id="projectsEmpty" hidden>
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <h3>No matching repositories found</h3>
+          <p>Try modifying your query or language filter.</p>
+          <button class="btn btn--ghost" id="clearFilters" type="button">
+            Clear filters
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ===== GRID: skills + snapshot + notifications ===== -->
+      <div class="split-grid">
+
+        <section class="panel reveal" id="skills">
+          <div class="panel__head">
+            <div>
+              <span class="panel-eyebrow">STACK RADAR</span>
+              <h2 class="section-title">Technology Spectrum</h2>
+              <p class="section-sub">
+                Core technologies derived from repository composition.
+              </p>
+            </div>
+          </div>
+
+          <ul class="skill-list" id="skillList"></ul>
         </section>
 
         <section class="panel reveal" id="connections">
-
           <div class="panel__head">
-
             <div>
-              <h2 class="section-title">
-                GitHub Snapshot
-              </h2>
-
+              <span class="panel-eyebrow">METRICS TELEMETRY</span>
+              <h2 class="section-title">GitHub Snapshot</h2>
               <p class="section-sub">
-                Live statistics overview.
+                Live telemetry overview across public endpoints.
               </p>
             </div>
-
           </div>
 
           <div class="github-stats">
-
             <div class="gh-stat">
-
               <span class="gh-stat__icon gh-stat__icon--cyan">
                 <svg viewBox="0 0 24 24">
                   <path d="M8 2v3M16 2v3M4 6h16M5 6v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6H5Z" />
                 </svg>
               </span>
-
               <p>
-                Repositories
+                Public Repositories
                 <strong id="repoCount">0</strong>
               </p>
-
             </div>
 
             <div class="gh-stat">
-
               <span class="gh-stat__icon gh-stat__icon--purple">
                 <svg viewBox="0 0 24 24">
                   <path d="M9 18H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5M16 22l3-3M19 19l-3-3" />
                 </svg>
               </span>
-
               <p>
                 Pull requests (recent)
                 <strong id="prCount">0</strong>
               </p>
-
             </div>
 
             <div class="gh-stat">
-
               <span class="gh-stat__icon gh-stat__icon--green">
                 <svg viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M8 13.5 10.5 16 16 9.5" />
                 </svg>
               </span>
-
               <p>
                 Issue activity (recent)
                 <strong id="issuesCount">0</strong>
               </p>
-
             </div>
 
             <div class="gh-stat">
-
               <span class="gh-stat__icon gh-stat__icon--amber">
                 <svg viewBox="0 0 24 24">
                   <path d="M12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2Z" />
                 </svg>
               </span>
-
               <p>
                 Stars earned
                 <strong id="starsEarnedCount">0</strong>
               </p>
-
             </div>
-
           </div>
-
         </section>
 
       </div>
+
+      <!-- ===== SYSTEM NOTIFICATIONS PANEL ===== -->
+      <section class="panel reveal" id="notifications-panel">
+        <div class="panel__head">
+          <div>
+            <span class="panel-eyebrow">SYSTEM LOG</span>
+            <h2 class="section-title">Notifications & Workspace Log</h2>
+            <p class="section-sub">
+              System telemetry updates and service sync events.
+            </p>
+          </div>
+        </div>
+
+        <ul class="notif-list notif-list--panel" id="notifListPanel"></ul>
+      </section>
 
       <!-- ===== PROFILE ===== -->
       <section class="panel profile reveal" id="profile">
@@ -1305,7 +1286,7 @@
         </div>
 
         <div class="settings-group">
-          <span class="settings-group__title">About NEXUS v2.0</span>
+          <span class="settings-group__title">About NEXUS v2.1</span>
           <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">
             NEXUS is an honest, production-ready developer intelligence dashboard backed directly by GitHub's official
             APIs.

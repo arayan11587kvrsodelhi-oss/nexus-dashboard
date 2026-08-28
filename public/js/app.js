@@ -168,6 +168,17 @@ function updateLiveStatus(data) {
   const state = data?.cacheState || (data?.isStale ? "stale-cache" : data?.isCached ? "fresh-cache" : "live");
   pill.dataset.state = state;
 
+  const syncChip = $("#welcomeSyncState");
+  if (syncChip) {
+    if (state === "stale-cache") {
+      syncChip.innerHTML = '<i class="dot dot--amber"></i>Telemetry Cache Stale';
+    } else if (state === "error") {
+      syncChip.innerHTML = '<i class="dot dot--amber"></i>Telemetry Offline';
+    } else {
+      syncChip.innerHTML = '<i class="dot dot--green"></i>Live Telemetry Active';
+    }
+  }
+
   if (state === "stale-cache") {
     label.textContent = "STALE";
     pill.title = "Showing cached snapshot because latest live sync failed.";
@@ -359,7 +370,9 @@ function updateDashboard(data) {
   const statStars = $("#statStars");
   const statForks = $("#statForks");
   const statFollowers = $("#statFollowers");
+  const navRepoBadge = $("#navRepoBadge");
 
+  if (navRepoBadge) navRepoBadge.textContent = fmt(data.stats.publicRepos);
   if (repoCount) repoCount.textContent = fmt(data.stats.publicRepos);
   if (followersCount) followersCount.textContent = fmt(data.stats.followers);
   if (starsCount) starsCount.textContent = fmt(data.stats.totalStars);
@@ -499,6 +512,26 @@ function renderProfileSection(profile, stats, languages) {
     `;
   }
 
+  /* ---------- Hero & Sidebar avatars ---------- */
+  const heroAvatar = $("#heroAvatar");
+  if (heroAvatar) {
+    heroAvatar.src = profile.avatar_url || "assets/aryanpic.jpeg";
+    heroAvatar.onerror = () => {
+      heroAvatar.src = "assets/aryanpic.jpeg";
+    };
+  }
+
+  const heroGithubLink = $("#heroGithubLink");
+  if (heroGithubLink && profile.login) {
+    heroGithubLink.textContent = `@${profile.login}`;
+    heroGithubLink.href = profile.html_url || `https://github.com/${profile.login}`;
+  }
+
+  const heroExternalGhBtn = $("#heroExternalGhBtn");
+  if (heroExternalGhBtn && profile.login) {
+    heroExternalGhBtn.href = profile.html_url || `https://github.com/${profile.login}`;
+  }
+
   const sidebarAvatar = $(".sidebar__avatar");
 
   if (sidebarAvatar) {
@@ -546,6 +579,28 @@ function renderProfileSection(profile, stats, languages) {
   /* ---------- Language distribution ---------- */
 
   const langBars = $(".lang-bars");
+  const skillBars = $("#skillBars");
+
+  if (skillBars && languages?.length > 0) {
+    const topSkills = languages.slice(0, 4).map((l, i) => ({
+      name: l.name,
+      level: Math.min(98, Math.max(40, l.percent + 25)),
+      color: ["cyan", "purple", "green", "amber"][i % 4]
+    }));
+    skillBars.innerHTML = topSkills
+      .map(
+        (s) => `
+        <li class="lang-row">
+          <span>${escapeHTML(s.name)}</span>
+          <div class="lang-track">
+            <i class="lang-fill" style="--w:${s.level}%;--c:var(--${s.color});width:${s.level}%;"></i>
+          </div>
+          <em>${s.level}%</em>
+        </li>
+      `
+      )
+      .join("");
+  }
 
   if (langBars && languages?.length > 0) {
     const topLangs = languages.slice(0, 4);
@@ -2571,6 +2626,19 @@ function initSearchAndActions() {
           e.target.value
         )
     );
+  }
+
+  const cmdPaletteHint = $("#cmdPaletteHint");
+  if (cmdPaletteHint) {
+    cmdPaletteHint.addEventListener("click", () => {
+      if (searchInput && window.getComputedStyle(searchInput).display !== "none") {
+        searchInput.focus();
+      } else if (projectSearch) {
+        projectSearch.focus();
+      } else {
+        openModalElement($("#helpModal"));
+      }
+    });
   }
 
   const sortSelect =
