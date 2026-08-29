@@ -1,6 +1,6 @@
 {
   "name": "nexus-dashboard",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "private": true,
   "description": "NEXUS - a live, single-owner developer intelligence dashboard backed by the GitHub API.",
   "main": "server/index.js",

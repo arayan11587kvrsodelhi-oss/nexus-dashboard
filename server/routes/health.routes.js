@@ -23,7 +23,7 @@ router.get("/health", async (req, res) => {
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? "healthy" : "unhealthy",
     service: "nexus-dashboard",
-    version: "2.0.0",
+    version: "2.2.0",
     environment: env.NODE_ENV,
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
